@@ -1,0 +1,5 @@
+discover
+hacking>=0.9.1,<0.10
+mock>=1.0
+testrepository>=0.0.18
+testtools>=0.9.34
