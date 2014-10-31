@@ -1,0 +1,8 @@
+Verified+2: Jenkins
+Code-Review+2: Dina Belova <dbelova@mirantis.com>
+Workflow+1: Dina Belova <dbelova@mirantis.com>
+Submitted-by: Jenkins
+Submitted-at: Fri, 31 Oct 2014 15:56:54 +0000
+Reviewed-on: https://review.openstack.org/132241
+Project: stackforge/python-opentsdbclient
+Branch: refs/heads/master
