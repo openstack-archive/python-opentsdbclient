@@ -18,15 +18,16 @@ import json
 import mock
 import requests
 
-from opentsdbclient import client
+from opentsdbclient.rest import client
 from opentsdbclient import tests
 
 
 class ClientTest(tests.BaseTestCase):
     def setUp(self):
         super(ClientTest, self).setUp()
-        self.client = client.OpenTSDBClient(opentsdb_host=self.host,
-                                            opentsdb_port=self.port)
+        self.client = client.RESTOpenTSDBClient(opentsdb_hosts=[(self.host,
+                                                                 self.port)],
+                                                opentsdb_port=self.port)
 
     @mock.patch.object(requests, 'get')
     def test_get_statistics(self, get_mock):
