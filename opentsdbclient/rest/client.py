@@ -13,19 +13,22 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import json
+
+import requests
+
 import opentsdbclient
-from opentsdbclient.rest import client as rest_cl
-from opentsdbclient.socket import client as socket_cl
+from opentsdbclient import client
+from opentsdbclient.rest import utils
 
 
-class BaseOpenTSDBClient(object):
-    def __init__(self, opentsdb_hosts, opentsdb_port, **kwargs):
-        self.hosts = opentsdb_hosts
-        self.port = opentsdb_port
+class RESTOpenTSDBClient(client.BaseOpenTSDBClient):
 
     def get_statistics(self):
         """Get info about what metrics are registered and with what stats."""
-        raise NotImplementedError
+        req = requests.get(utils.STATS_TEMPL % {'host': self.hosts[0][0],
+                                                'port': self.port})
+        return req
 
     def put_meter(self, meters):
         """Post new meter(s) to the database.
@@ -39,7 +42,14 @@ class BaseOpenTSDBClient(object):
           - tags: a map of tag name/tag value pairs. At least one pair must be
                   supplied.
         """
-        raise NotImplementedError
+        res = []
+        meters = self._check_meters(meters)
+        for meter_dict in meters:
+            req = requests.post(utils.PUT_TEMPL %
+                                {'host': self.hosts[0][0], 'port': self.port},
+                                data=json.dumps(meter_dict))
+            res.append(req)
+        return res
 
     def define_retention(self, tsuid, retention_days):
         """Set retention days for the defined by ID timeseries.
@@ -54,11 +64,18 @@ class BaseOpenTSDBClient(object):
                                given timeseries. When set to 0, the default,
                                data is retained indefinitely.
         """
-        raise NotImplementedError
+        meta_data = {'tsuid': tsuid, 'retention': retention_days}
+        req = requests.post(utils.META_TEMPL % {'host': self.hosts[0][0],
+                                                'port': self.port,
+                                                'tsuid': tsuid},
+                            data=json.dumps(meta_data))
+        return req
 
     def get_aggregators(self):
         """Used to get the list of default aggregation functions."""
-        raise NotImplementedError
+        req = requests.get(utils.AGGR_TEMPL % {'host': self.hosts[0][0],
+                                               'port': self.port})
+        return req
 
     def get_version(self):
         """Used to check OpenTSDB version.
@@ -67,27 +84,29 @@ class BaseOpenTSDBClient(object):
         only for the 2.x REST API version, so some of the failures might refer
         to the wrong OpenTSDB version installed.
         """
-        raise NotImplementedError
+        req = requests.get(utils.VERSION_TEMPL % {'host': self.hosts[0][0],
+                                                  'port': self.port})
+        return req
 
-    def _check_meters(self, meters):
-        """Check that meters to be put are having nice format."""
-        if type(meters) == dict:
-            meters = [meters]
-        for meter_dict in meters:
-            if (set(meter_dict.keys())
-                    != set(['metric', 'timestamp', 'value', 'tags'])):
-                raise opentsdbclient.InvalidOpenTSDBFormat(
-                    actual=meter_dict,
-                    expected="{'metric': <meter_name>, 'timestamp': <ts>, "
-                             "'value': <value>, 'tags': <at least one pair>}")
-        return meters
+    def _make_query(self, query, verb):
+        meth = getattr(requests, verb.lower(), None)
+        if meth is None:
+            pass
+        req = meth(utils.QUERY_TEMPL % {'host': self.hosts[0][0],
+                                        'port': self.port,
+                                        'query': query})
+        return req
 
+    def get_query(self, query):
+        return self._make_query(query, 'get')
 
-def get_client(hosts, port, protocol='rest', **kwargs):
-    if protocol == 'rest':
-        return rest_cl.RESTOpenTSDBClient(hosts, port, **kwargs)
-    elif protocol == 'socket':
-        return socket_cl.SocketOpenTSDBClient(hosts, port, **kwargs)
-    else:
-        raise opentsdbclient.OpenTSDBError('No %s protocol to communicate with'
-                                           'OpenTSDB implemented.' % protocol)
+    def process_response(self, resp):
+        try:
+            res = json.loads(resp.text)
+        except Exception:
+            raise opentsdbclient.OpenTSDBError(resp.text)
+
+        if 'errors' in res:
+            raise opentsdbclient.OpenTSDBError(res['error'])
+
+        return res
