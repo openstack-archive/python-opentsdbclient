@@ -24,7 +24,7 @@ class BaseOpenTSDBClient(object):
         """Get info about what metrics are registered and with what stats."""
         raise NotImplementedError
 
-    def put_meter(self, meters):
+    def put_meter(self, meters, **kwargs):
         """Post new meter(s) to the database.
 
         Meter dictionary *should* contain the following four required fields:

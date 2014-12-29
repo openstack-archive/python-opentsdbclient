@@ -160,17 +160,22 @@ class SocketOpenTSDBClient(base.BaseOpenTSDBClient):
                 LOG.error('Failed to connect to %s:%d', self.host, self.port)
                 self.blacklist_tsd_host()
 
-    def put_meter(self, meters):
+    def put_meter(self, meters, commit=False):
         """Post new meter(s) to the database.
 
-        Meter dictionary *should* contain the following four required fields:
-          - metric: the name of the metric you are storing
-          - timestamp: a Unix epoch style timestamp in seconds or milliseconds.
-                       The timestamp must not contain non-numeric characters.
-          - value: the value to record for this data point. It may be quoted or
-                   not quoted and must conform to the OpenTSDB value rules.
-          - tags: a map of tag name/tag value pairs. At least one pair must be
-                  supplied.
+        :param meters: dictionary containing only four required fields:
+                       - metric: the name of the metric you are storing
+                       - timestamp: a Unix epoch style timestamp in seconds or
+                         milliseconds. The timestamp must not contain
+                         non-numeric characters.
+                       - value: the value to record for this data point.
+                         It may be quoted or not quoted and must conform to the
+                         OpenTSDB value rules.
+                       - tags: a map of tag name/tag value pairs. At least one
+                         pair must be supplied.
+        :param commit: bool variable defining if data sending *should* be
+                       processed immediately (no matter if queue is full or
+                       not)
         """
 
         # put meter to the send_queue and check if it's time to send it to the
@@ -178,7 +183,7 @@ class SocketOpenTSDBClient(base.BaseOpenTSDBClient):
         meters = self._check_meters(meters)
         self.send_queue = list(itertools.chain(self.send_queue, meters))
 
-        if len(self.send_queue) <= self.send_queue_max_size:
+        if len(self.send_queue) <= self.send_queue_max_size or not commit:
             return
 
         self.maintain_connection()
