@@ -107,7 +107,7 @@ class RESTOpenTSDBClient(base.BaseOpenTSDBClient):
         except Exception:
             raise opentsdbclient.OpenTSDBError(resp.text)
 
-        if 'errors' in res:
+        if 'error' in res:
             raise opentsdbclient.OpenTSDBError(res['error'])
 
         return res

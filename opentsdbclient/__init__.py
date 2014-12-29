@@ -18,6 +18,7 @@ class OpenTSDBError(Exception):
     def __init__(self, msg=None):
         if msg is None:
             msg = 'Unknown OpenTSDB error occurred. \n %s \n %s'
+        self.msg = msg
         super(OpenTSDBError, self).__init__(msg)
 
 

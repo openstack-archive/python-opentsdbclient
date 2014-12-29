@@ -13,6 +13,7 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import copy
 import itertools
 import logging
 import random
@@ -198,11 +199,13 @@ class SocketOpenTSDBClient(base.BaseOpenTSDBClient):
                           'has been collected' % self.max_uncaught_exceptions)
             raise
 
-    def compose_line_from_meter(self, meter_dict):
+    def compose_line_from_meter(self, m_dict):
+        meter_dict = copy.deepcopy(m_dict)
         tags = meter_dict.pop('tags')
-        tags = ''.join(' %s=%s' % (k, v) for k, v in six.iteritems(tags))
+        tags_str = ''.join(' %s=%s' % (k, v) for k, v in six.iteritems(tags))
         line = '%(metric)s %(timestamp)d %(value)s' % meter_dict
-        return '%(metric)s%(tags)s' % {'metric': line, 'tags': tags}
+        meter_dict['tags'] = tags
+        return '%(metric)s%(tags)s' % {'metric': line, 'tags': tags_str}
 
     def send_data(self):
         req = ''.join("put %s\n" % self.compose_line_from_meter(meter_dict)
