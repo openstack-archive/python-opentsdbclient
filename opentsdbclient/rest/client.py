@@ -101,7 +101,8 @@ class RESTOpenTSDBClient(base.BaseOpenTSDBClient):
     def get_query(self, query):
         return self._make_query(query, 'get')
 
-    def process_response(self, resp):
+    @staticmethod
+    def process_response(resp):
         try:
             res = json.loads(resp.text)
         except Exception:

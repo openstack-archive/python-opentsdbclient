@@ -66,7 +66,8 @@ class BaseOpenTSDBClient(object):
         """
         raise NotImplementedError
 
-    def _check_meters(self, meters):
+    @staticmethod
+    def _check_meters(meters):
         """Check that meters to be put are having nice format."""
         if type(meters) == dict:
             meters = [meters]

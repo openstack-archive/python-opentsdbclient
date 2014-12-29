@@ -199,7 +199,8 @@ class SocketOpenTSDBClient(base.BaseOpenTSDBClient):
                           'has been collected' % self.max_uncaught_exceptions)
             raise
 
-    def compose_line_from_meter(self, m_dict):
+    @staticmethod
+    def compose_line_from_meter(m_dict):
         meter_dict = copy.deepcopy(m_dict)
         tags = meter_dict.pop('tags')
         tags_str = ''.join(' %s=%s' % (k, v) for k, v in six.iteritems(tags))
